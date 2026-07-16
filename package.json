@@ -1,0 +1,15 @@
+{
+  "name": "flick-n-fold",
+  "version": "1.0.0",
+  "description": "MediaPipe based web game that lets you play rock paper scissor and hand cricket against a computer",
+  "main": "script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@mediapipe/tasks-vision": "^0.10.35"
+  }
+}
