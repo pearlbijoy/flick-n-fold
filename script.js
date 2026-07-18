@@ -5,6 +5,11 @@ const canvas = document.getElementById("overlay");
 const ctx = canvas.getContext("2d");
 let handLandmarker;
 
+let gamePhase,phaseStartTime;
+let currentRound,totalRounds,playerScore,computerScore,computerChoice,playerChoice;
+let moveCaptured;
+const countdownelement=document.getElementById("countdown");
+const usermove=document.getElementById("usermove");
 async function getCamera(){
     const stream=await navigator.mediaDevices.getUserMedia({video:true});
     video.srcObject=stream;
@@ -23,15 +28,46 @@ async function loadHandLandmarker(){
         numHands:2});
 }
 
+function isExtended(hand,tipIndex,jointIndex){
+    return hand[tipIndex].y<hand[jointIndex].y;
+}
+
+function getGesture(hand){ 
+    const fingerState={
+        thumb:isExtended(hand,4,2),
+        index:isExtended(hand,8,6),
+        middle:isExtended(hand,12,10),
+        ring:isExtended(hand,16,14),
+        pinky:isExtended(hand,20,18)
+    };
+    if (fingerState.index && fingerState.middle){
+        if(fingerState.ring && fingerState.pinky){
+            if(fingerState.thumb){
+                return "paper";}
+            else{return "unknown. please extend all five fingers if you meant to show paper.";}
+        }
+        else{
+            return "scissor";
+        }
+    }
+    else if(!fingerState.ring && !fingerState.pinky){
+        return "rock";
+    }
+    else{
+        return "unidentified"
+    }
+}
+
+
 function detectHands(){
     const result=handLandmarker.detectForVideo(video,performance.now());
-    console.log(result)
+    //console.log(result)
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-    
+    let hand;
+
     if(result.landmarks.length){
         status.textContent=`Hand(s) detected: ${result.landmarks.length}`;
-        let hand=result.landmarks[0];
-        
+        hand=result.landmarks[0];
         const HAND_CONNECTIONS = [
             [0,1],[1,2],[2,3],[3,4],       // thumb
             [0,5],[5,6],[6,7],[7,8],       // index
@@ -65,6 +101,64 @@ function detectHands(){
         }   
     }
     else{status.textContent="No Hand Detected.";}
+    if (gamePhase === "countdown") {
+        moveCaptured=false;
+        let elapsed = performance.now() - phaseStartTime;
+        if(elapsed<750){
+            countdownelement.textContent="ROCK";
+            //select the computer move here
+        }
+        else if(elapsed<1500){
+            countdownelement.textContent="PAPER";
+        }
+        else if(elapsed<2250){
+            countdownelement.textContent="SCISSORS";
+        }
+        else if(elapsed<2600){
+            countdownelement.textContent="SHOOT"
+        }
+        else{
+            phaseStartTime=performance.now();
+            gamePhase="reveal";
+            
+        }
+    }
+    else if (gamePhase === "reveal") {
+        let elapsed = performance.now() - phaseStartTime;
+        if(!moveCaptured){
+            if(hand){
+            playerChoice=getGesture(hand);
+            moveCaptured=true;
+            //freeze th frame and canvas;
+            }
+        }
+        if(playerChoice==="unidentified"){
+            usermove.textContent="Unidentified hand gesture. Please try again.";
+            phaseStartTime=performance.now();
+            gamePhase="countdown";
+        }
+        else{
+        usermove.textContent=`you played ${playerChoice}`;
+        //update the coomputers move paragraph element
+        if(elapsed>1000){
+            phaseStartTime=performance.now();
+            gamePhase="waiting";
+            }
+        }
+    }
+    else if (gamePhase === "waiting") {
+        let elapsed=performance.now()-phaseStartTime;
+        //calc points
+        //update points
+        //display points
+        if(elapsed>1000){
+            //set text saying u win/lose
+        }
+        if(elapsed>1500){
+            phaseStartTime=performance.now()
+            gamePhase="countdown";
+        }
+    }
     requestAnimationFrame(detectHands);
 }
 
@@ -72,6 +166,10 @@ async function main(){
     await getCamera();
     await loadHandLandmarker();
     status.textContent="Ready";
+    gamePhase="countdown";
+    phaseStartTime=performance.now();
     detectHands();
 }
 main();
+
+
