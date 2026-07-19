@@ -6,10 +6,15 @@ const ctx = canvas.getContext("2d");
 let handLandmarker;
 
 let gamePhase,phaseStartTime;
-let currentRound,totalRounds,playerScore,computerScore,computerChoice,playerChoice;
-let moveCaptured;
+let playerScore=0,computerScore=0,computerChoice,playerChoice;
+let moveCaptured,computersChoiceSelected,roundResultSet;
+let roundResult;
 const countdownelement=document.getElementById("countdown");
 const usermove=document.getElementById("usermove");
+const computermove=document.getElementById("computermove");
+const playerPoints=document.getElementById("playerPoints");
+const computerPoints=document.getElementById("computerPoints");
+const roundResultDisplay=document.getElementById("roundResultDisplay");
 async function getCamera(){
     const stream=await navigator.mediaDevices.getUserMedia({video:true});
     video.srcObject=stream;
@@ -43,18 +48,47 @@ function getGesture(hand){
     if (fingerState.index && fingerState.middle){
         if(fingerState.ring && fingerState.pinky){
             if(fingerState.thumb){
-                return "paper";}
-            else{return "unknown. please extend all five fingers if you meant to show paper.";}
+                return "PAPER";}
+            else{return "UNIDENTIFIED GESTURE. PLEASE EXTEND ALL FIVE FINGERS IF YOU MEANT TO SHOW PAPER.";}
         }
         else{
-            return "scissor";
+            return "SCISSOR";
         }
     }
     else if(!fingerState.ring && !fingerState.pinky){
-        return "rock";
+        return "ROCK";
     }
     else{
-        return "unidentified"
+        return "UNIDENTIFIED";
+    }
+}
+
+function getComputerChoice(){
+    const choices=["ROCK","PAPER","SCISSOR"];
+    return choices[Math.floor(Math.random() * 3)];
+}
+
+function getRoundResult(player, computer) {
+    const winCombinations = [["ROCK","SCISSOR"],["SCISSOR","PAPER"],["PAPER","ROCK"]];
+    roundResultSet = true;
+
+    if (player === computer) {
+        roundResult = undefined;
+    }
+    else if (winCombinations.some(pair => pair[0] === player && pair[1] === computer)) {
+        roundResult = true;
+    }
+    else {
+        roundResult = false;
+    }
+}
+
+function getPoints(roundoutcome){
+    if(roundoutcome){
+        playerScore++;
+    }
+    else{
+        computerScore++;
     }
 }
 
@@ -101,12 +135,16 @@ function detectHands(){
         }   
     }
     else{status.textContent="No Hand Detected.";}
+    
     if (gamePhase === "countdown") {
         moveCaptured=false;
         let elapsed = performance.now() - phaseStartTime;
         if(elapsed<750){
             countdownelement.textContent="ROCK";
-            //select the computer move here
+            if(!computersChoiceSelected){
+                computerChoice=getComputerChoice();
+                computersChoiceSelected=true;
+            }
         }
         else if(elapsed<1500){
             countdownelement.textContent="PAPER";
@@ -132,14 +170,24 @@ function detectHands(){
             //freeze th frame and canvas;
             }
         }
-        if(playerChoice==="unidentified"){
+        if(!playerChoice){                        
+            usermove.textContent="No hand detected. Please try again.";
+            phaseStartTime=performance.now();
+            gamePhase="countdown";
+        }
+        else if(playerChoice==="UNIDENTIFIED"){
             usermove.textContent="Unidentified hand gesture. Please try again.";
+            phaseStartTime=performance.now();
+            gamePhase="countdown";
+        }
+        else if(playerChoice.startsWith("UNIDENTIFIED")){
+            usermove.textContent=`${playerChoice}`;
             phaseStartTime=performance.now();
             gamePhase="countdown";
         }
         else{
         usermove.textContent=`you played ${playerChoice}`;
-        //update the coomputers move paragraph element
+        computermove.textContent=`the computer played ${computerChoice}`;
         if(elapsed>1000){
             phaseStartTime=performance.now();
             gamePhase="waiting";
@@ -148,16 +196,42 @@ function detectHands(){
     }
     else if (gamePhase === "waiting") {
         let elapsed=performance.now()-phaseStartTime;
-        //calc points
-        //update points
-        //display points
+        if(!roundResultSet){
+            getRoundResult(playerChoice,computerChoice);
+            if(roundResult!=undefined){
+                getPoints(roundResult);
+                playerPoints.textContent=`${playerScore}`;
+                computerPoints.textContent=`${computerScore}`;
+                }
+            }
         if(elapsed>1000){
-            //set text saying u win/lose
+            if(roundResult===undefined){
+                roundResultDisplay.textContent="It's a tie! No points added."
+            }
+            else if(roundResult){
+                roundResultDisplay.textContent="You win! 1 point Added!";
+            }
+            else{
+                 roundResultDisplay.textContent="You lose:( 1 point to the computer."
+            }
         }
-        if(elapsed>1500){
+
+        if(elapsed>2300){        
+            moveCaptured=false;
+            computersChoiceSelected=false;
+            roundResultSet=false;
             phaseStartTime=performance.now()
-            gamePhase="countdown";
+            
+            if(playerScore>=5 || computerScore>=5){
+                gamePhase="end";
+            }
+            else{
+                gamePhase="countdown";
+            }
         }
+    }
+    else{
+        //display final stats end the loop.
     }
     requestAnimationFrame(detectHands);
 }
@@ -171,5 +245,3 @@ async function main(){
     detectHands();
 }
 main();
-
-
