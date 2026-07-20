@@ -3,20 +3,53 @@
 <head>
   <meta charset="UTF-8">
   <title>flick-n-fold</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div style="position: relative; width: fit-content;">
-  <p id="finalResult"></p>
-  <video id="webcam" autoplay playsinline style="transform: scaleX(-1);"></video>
-  <canvas id="overlay" style="position: absolute; top: 0; left: 0; transform: scaleX(-1);"></canvas>
-  <p id="status">Loading...</p>
-  <p id="countdown">Waiting...</p>
-  <p id="usermove"> </p>
-  <p id="computermove"></p>
-  <p id="playerPoints"></p>
-  <p id="computerPoints"></p>
-  <p id="roundResultDisplay"></p>
-</div>
+
+  <!-- Top nav bar -->
+  <nav class="navbar">
+    <span>Home</span>
+    <span class="title">flick-n-fold</span>
+    <span>Settings</span>
+  </nav>
+
+  <!-- Status bar: countdown text; finalScore only fills in at game end -->
+  <div class="status-bar">
+    <p id="countdown">Waiting...</p>
+    <p id="finalScore"></p>
+  </div>
+
+  <!-- Two-column row: computer move (left) + live feed (right) -->
+  <div class="game-row">
+
+    <div class="box computer-box">
+      <h3>Computer's Move</h3>
+      <p id="computermove">Waiting for round...</p>
+    </div>
+
+    <div class="box feed-box">
+      <h3>Your Move</h3>
+      <div class="video-wrapper">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="overlay"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Footer: your move, round result, score during play; only finalResult remains at game end -->
+  <div class="footer-bar">
+    <p id="usermove"></p>
+    <p id="roundResultDisplay"></p>
+    <div class="score-top">
+      <span>You: <span id="playerPoints">0</span></span>
+      <span>Computer: <span id="computerPoints">0</span></span>
+    </div>
+    <p id="finalResult"></p>
+    <p id="status">Loading...</p>
+  </div>
+
   <script type="module" src="script.js"></script>
 </body>
 </html>

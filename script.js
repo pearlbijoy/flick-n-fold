@@ -10,6 +10,7 @@ const playerPoints=document.getElementById("playerPoints");
 const computerPoints=document.getElementById("computerPoints");
 const roundResultDisplay=document.getElementById("roundResultDisplay");
 const finalResult=document.getElementById("finalResult");
+const finalScore=document.getElementById("finalScore");
 const ctx = canvas.getContext("2d");
 
 let handLandmarker;
@@ -96,7 +97,6 @@ function getPoints(roundoutcome){
     }
 }
 
-
 function detectHands(){
     const result=handLandmarker.detectForVideo(video,performance.now());
     //console.log(result)
@@ -117,7 +117,7 @@ function detectHands(){
                 [13,17],[17,18],[18,19],[19,20],// pinky
                 [0,17]                          // palm base
                 ];
-        if(gamePhase==="countdown"){
+        if(gamePhase==="countdown" || gamePhase=="waiting"){
             for(let pair of HAND_CONNECTIONS){
                     let start=pair[0];
                     let end=pair[1];
@@ -173,6 +173,10 @@ function detectHands(){
     else{status.textContent="No Hand Detected.";}
     
     if (gamePhase === "countdown") {
+        computermove.textContent = "The computer is choosing...";
+        usermove.textContent = "";
+        roundResultDisplay.textContent = "";
+        playerChoice = undefined;
         moveCaptured=false;
         let elapsed = performance.now() - phaseStartTime;
         if(elapsed<750){
@@ -208,23 +212,23 @@ function detectHands(){
         if(!playerChoice){                        
             usermove.textContent="No hand detected. Please try again.";
             
-            if(elapsed>800){
+            if(elapsed>1200){
             frameFrozen=false;
             phaseStartTime=performance.now();
             gamePhase="countdown";}
         }
         else if(playerChoice==="UNIDENTIFIED"){
-            usermove.textContent="Unidentified hand gesture. Please try again.";
-            phaseStartTime=performance.now();
+            usermove.textContent="Unidentified hand gesture. Please try again."; 
             frameFrozen=false;
-            if(elapsed>800){
+            if(elapsed>1000){
+            phaseStartTime=performance.now();
             gamePhase="countdown";}
         }
         else if(playerChoice.startsWith("UNIDENTIFIED")){
             usermove.textContent=`${playerChoice}`;
-            phaseStartTime=performance.now();
             frameFrozen=false;
-            if(elapsed>800){
+            if(elapsed>1000){
+            phaseStartTime=performance.now();
             gamePhase="countdown";}
         }
         else{
@@ -275,7 +279,11 @@ function detectHands(){
     }
     else{
         console.log("REACHED END PHASE", playerScore, computerScore);
-        
+        usermove.textContent = "";
+        computermove.textContent = "";
+        roundResultDisplay.textContent = "";
+        countdownelement.textContent = "GAME OVER";
+        finalScore.textContent = `Final Score: ${playerScore} - ${computerScore}`;
         if(playerScore>computerScore){
         finalResult.textContent=`Game Over! You won ${playerScore} - ${computerScore} against the computer!`;
         }
