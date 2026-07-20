@@ -1,20 +1,24 @@
 import { HandLandmarker, FilesetResolver } from "./vision_bundle.mjs";
+
 const video=document.getElementById("webcam");
 const status=document.getElementById("status");
 const canvas = document.getElementById("overlay");
-const ctx = canvas.getContext("2d");
-let handLandmarker;
-
-let gamePhase,phaseStartTime;
-let playerScore=0,computerScore=0,computerChoice,playerChoice;
-let moveCaptured,computersChoiceSelected,roundResultSet;
-let roundResult;
 const countdownelement=document.getElementById("countdown");
 const usermove=document.getElementById("usermove");
 const computermove=document.getElementById("computermove");
 const playerPoints=document.getElementById("playerPoints");
 const computerPoints=document.getElementById("computerPoints");
 const roundResultDisplay=document.getElementById("roundResultDisplay");
+const finalResult=document.getElementById("finalResult");
+const ctx = canvas.getContext("2d");
+
+let handLandmarker;
+let gamePhase,phaseStartTime;
+let playerScore=0,computerScore=0,computerChoice,playerChoice;
+let moveCaptured,computersChoiceSelected,roundResultSet;
+let roundResult;
+let frameFrozen;
+
 async function getCamera(){
     const stream=await navigator.mediaDevices.getUserMedia({video:true});
     video.srcObject=stream;
@@ -55,7 +59,7 @@ function getGesture(hand){
             return "SCISSOR";
         }
     }
-    else if(!fingerState.ring && !fingerState.pinky){
+    else if(!fingerState.index && !fingerState.middle && !fingerState.ring && !fingerState.pinky){
         return "ROCK";
     }
     else{
@@ -96,43 +100,75 @@ function getPoints(roundoutcome){
 function detectHands(){
     const result=handLandmarker.detectForVideo(video,performance.now());
     //console.log(result)
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
     let hand;
+
+    if(gamePhase==="countdown"|| gamePhase==="waiting"|| gamePhase==="end"){
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
 
     if(result.landmarks.length){
         status.textContent=`Hand(s) detected: ${result.landmarks.length}`;
         hand=result.landmarks[0];
         const HAND_CONNECTIONS = [
-            [0,1],[1,2],[2,3],[3,4],       // thumb
-            [0,5],[5,6],[6,7],[7,8],       // index
-            [5,9],[9,10],[10,11],[11,12],  // middle
-            [9,13],[13,14],[14,15],[15,16],// ring
-            [13,17],[17,18],[18,19],[19,20],// pinky
-            [0,17]                          // palm base
-            ];
-        for(let pair of HAND_CONNECTIONS){
-                let start=pair[0];
-                let end=pair[1];
-                ctx.moveTo((hand[start].x)*(canvas.width),(hand[start].y)*(canvas.height));
-                ctx.lineTo((hand[end].x)*(canvas.width),(hand[end].y)*(canvas.height));
-                ctx.stroke();
-            }
-            
-        for(let i=0;i<21;i++){
-        let color,prev_x,prev_y;
-        if(i<5){color="yellow";}
-        else if(i<9){color="blue";}
-        else if(i<13){color="red";}
-        else if(i<17){color="green";}
-        else{color="orange";}
+                [0,1],[1,2],[2,3],[3,4],       // thumb
+                [0,5],[5,6],[6,7],[7,8],       // index
+                [5,9],[9,10],[10,11],[11,12],  // middle
+                [9,13],[13,14],[14,15],[15,16],// ring
+                [13,17],[17,18],[18,19],[19,20],// pinky
+                [0,17]                          // palm base
+                ];
+        if(gamePhase==="countdown"){
+            for(let pair of HAND_CONNECTIONS){
+                    let start=pair[0];
+                    let end=pair[1];
+                    ctx.moveTo((hand[start].x)*(canvas.width),(hand[start].y)*(canvas.height));
+                    ctx.lineTo((hand[end].x)*(canvas.width),(hand[end].y)*(canvas.height));
+                    ctx.stroke();
+                }
+                
+            for(let i=0;i<21;i++){
+            let color,prev_x,prev_y;
+            if(i<5){color="yellow";}
+            else if(i<9){color="blue";}
+            else if(i<13){color="red";}
+            else if(i<17){color="green";}
+            else{color="orange";}
 
-        let x_coord=(hand[i].x)*(canvas.width);
-        let y_coord=(hand[i].y)*(canvas.height);
-        ctx.beginPath()
-        ctx.arc(x_coord,y_coord,3,0,6.28);
-        ctx.fillStyle=color;
-        ctx.fill();
-        }   
+            let x_coord=(hand[i].x)*(canvas.width);
+            let y_coord=(hand[i].y)*(canvas.height);
+            ctx.beginPath()
+            ctx.arc(x_coord,y_coord,3,0,6.28);
+            ctx.fillStyle=color;
+            ctx.fill();
+            }   
+        }
+        else if(gamePhase==="reveal" && !frameFrozen){
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+            for(let pair of HAND_CONNECTIONS){
+                    let start=pair[0];
+                    let end=pair[1];
+                    ctx.moveTo((hand[start].x)*(canvas.width),(hand[start].y)*(canvas.height));
+                    ctx.lineTo((hand[end].x)*(canvas.width),(hand[end].y)*(canvas.height));
+                    ctx.stroke();
+                }
+                
+            for(let i=0;i<21;i++){
+            let color,prev_x,prev_y;
+            if(i<5){color="yellow";}
+            else if(i<9){color="blue";}
+            else if(i<13){color="red";}
+            else if(i<17){color="green";}
+            else{color="orange";}
+
+            let x_coord=(hand[i].x)*(canvas.width);
+            let y_coord=(hand[i].y)*(canvas.height);
+            ctx.beginPath()
+            ctx.arc(x_coord,y_coord,3,0,6.28);
+            ctx.fillStyle=color;
+            ctx.fill();
+            }   
+            frameFrozen = true;
+        }
     }
     else{status.textContent="No Hand Detected.";}
     
@@ -167,23 +203,29 @@ function detectHands(){
             if(hand){
             playerChoice=getGesture(hand);
             moveCaptured=true;
-            //freeze th frame and canvas;
             }
         }
         if(!playerChoice){                        
             usermove.textContent="No hand detected. Please try again.";
+            
+            if(elapsed>800){
+            frameFrozen=false;
             phaseStartTime=performance.now();
-            gamePhase="countdown";
+            gamePhase="countdown";}
         }
         else if(playerChoice==="UNIDENTIFIED"){
             usermove.textContent="Unidentified hand gesture. Please try again.";
             phaseStartTime=performance.now();
-            gamePhase="countdown";
+            frameFrozen=false;
+            if(elapsed>800){
+            gamePhase="countdown";}
         }
         else if(playerChoice.startsWith("UNIDENTIFIED")){
             usermove.textContent=`${playerChoice}`;
             phaseStartTime=performance.now();
-            gamePhase="countdown";
+            frameFrozen=false;
+            if(elapsed>800){
+            gamePhase="countdown";}
         }
         else{
         usermove.textContent=`you played ${playerChoice}`;
@@ -220,6 +262,7 @@ function detectHands(){
             moveCaptured=false;
             computersChoiceSelected=false;
             roundResultSet=false;
+            frameFrozen=false;
             phaseStartTime=performance.now()
             
             if(playerScore>=5 || computerScore>=5){
@@ -231,7 +274,15 @@ function detectHands(){
         }
     }
     else{
-        //display final stats end the loop.
+        console.log("REACHED END PHASE", playerScore, computerScore);
+        
+        if(playerScore>computerScore){
+        finalResult.textContent=`Game Over! You won ${playerScore} - ${computerScore} against the computer!`;
+        }
+        else{
+            finalResult.textContent=`Game Over! You lost ${playerScore} - ${computerScore} against the computer.`;
+        }
+        return
     }
     requestAnimationFrame(detectHands);
 }
