@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hand Cricket — flick-n-fold</title>
+  <link rel="stylesheet" href="cricket_style.css">
+</head>
+<body>
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <span class="brand">HAND CRICKET</span>
+    <span class="subtitle">flick-n-fold</span>
+  </div>
+
+  <!-- Left sidebar -->
+  <div class="sidebar">
+    <div>
+      <h4>Home</h4>
+      <p><a href="index.html" style="color:var(--lime);">← Back to Rock Paper Scissors</a></p>
+    </div>
+    <div>
+      <h4>How to Play</h4>
+      <p>Show a number 1–9 with your hand. Batter and bowler both play a number each round — if they match, the batter's out.</p>
+    </div>
+    <div>
+      <h4>Rules</h4>
+      <ul>
+        <li class="rule-item"><span class="num">1–5</span> index → all fingers, thumb tucked</li>
+        <li class="rule-item"><span class="num">6–9</span> thumb + fingers</li>
+        <li class="rule-item"><span class="num">⚡</span> Matching numbers = batter out</li>
+        <li class="rule-item"><span class="num">🎯</span> Beat the target to win chasing</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Center stage -->
+  <div class="stage">
+    <div class="countdown-banner">
+      <span id="countdown">Waiting...</span>
+    </div>
+
+    <div class="video-wrapper">
+      <video id="webcam" autoplay playsinline></video>
+      <canvas id="overlay"></canvas>
+      <div class="camera-tag"><span class="dot"></span><span id="status">Loading...</span></div>
+      <div class="your-move-tag">
+        <div class="label">Your move</div>
+        <div id="usermove">—</div>
+      </div>
+    </div>
+
+    <div class="computer-box">
+      <span class="label">Computer's move</span>
+      <span id="computermove">Waiting for round...</span>
+    </div>
+
+    <div class="end-panel" id="endPanel" style="display:none;">
+      <p id="finalResult"></p>
+      <p id="finalScore"></p>
+    </div>
+  </div>
+
+  <!-- Right scoreboard -->
+  <div class="scoreboard">
+    <div class="status-pill">
+      Currently batting
+      <span class="value" id="batterLabel">—</span>
+    </div>
+    <div class="status-pill">
+      Innings
+      <span class="value" id="halfLabel">1st innings</span>
+    </div>
+
+    <div class="flip-score">
+      <div class="eyebrow">Running score</div>
+      <div class="flip-digit" id="liveScore">0</div>
+      <div class="target-line" id="targetLine">No target yet</div>
+    </div>
+
+    <div class="round-result" id="roundResultDisplay"></div>
+
+    <!-- kept for compatibility with existing script logic -->
+    <span id="playerPoints" style="display:none;">0</span>
+    <span id="computerPoints" style="display:none;">0</span>
+  </div>
+
+  <!-- Toss overlay -->
+  <div id="tossChoice">
+    <p>Choose your role</p>
+    <div class="toss-buttons">
+      <button id="batFirstBtn">Bat First</button>
+      <button id="bowlFirstBtn">Bowl First</button>
+    </div>
+  </div>
+
+  <script type="module" src="cricket.js"></script>
+</body>
+</html>
